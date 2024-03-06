@@ -1,0 +1,70 @@
+#%RAML 1.0
+title: SAP System API
+version: v1
+mediaType: 
+- application/json
+
+uses:
+  common: /exchange_modules/fc9e3283-a489-4e88-99aa-cceea4aa5ea1/gon-common-api-fragments/1.0.3/gon-common-api-fragments.raml
+
+types:
+  Order: !include exchange_modules/fc9e3283-a489-4e88-99aa-cceea4aa5ea1/online-store-api-fragments/1.0.2/datatypes/Order.raml
+  OrderNoID: !include exchange_modules/fc9e3283-a489-4e88-99aa-cceea4aa5ea1/online-store-api-fragments/1.0.2/datatypes/OrderNoID.raml
+  
+/orders:
+  get:
+    is: [common.client-id-required, common.error-responses]
+    description: Retrieve a list of orders
+    responses:
+      200:
+        body:
+          type: Order[]
+
+  post:
+    is: [common.client-id-required, common.error-responses]
+    description: Create a new order
+    body:
+      type: OrderNoID
+    responses:
+      201:
+        description: Order created successfully
+
+/orders/{order_id}:
+  get:
+    is: [common.client-id-required, common.error-responses]
+    description: Retrieve details of a specific order
+    responses:
+      200:
+        body:
+          type: Order
+
+  put:
+    is: [common.client-id-required, common.error-responses]
+    description: Update details of a specific order
+    body:
+      application/json:
+        example: |
+          {
+            "product_id": 1,
+            "total_amount": 54.98,
+            "status": "Shipped"
+          }
+    responses:
+      200:
+        description: Order updated successfully
+
+  delete:
+    is: [common.client-id-required, common.error-responses]
+    description: Delete a specific order
+    responses:
+      204:
+        description: Order deleted successfully
+
+/orders/customers/{customer_id}:
+  get:
+    is: [common.client-id-required, common.error-responses]
+    responses:
+      200:
+        body:
+          type: Order[]
+

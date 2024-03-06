@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+    <apikit:config name="sap-systemapi-config" api="sap-systemapi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="sap-systemapi-main">
+        <http:listener config-ref="HTTP_Listener_config" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="sap-systemapi-config" />
+        <error-handler ref="GON_APIKIT_Error_Handler" />
+    </flow>
+    <flow name="sap-systemapi-console">
+        <http:listener config-ref="HTTP_Listener_config" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="sap-systemapi-config" />
+        <error-handler ref="GON_APIKIT_Error_Handler" />
+    </flow>
+    <flow name="put:\orders\(order_id):application\json:sap-systemapi-config">
+        <flow-ref doc:name="Flow Reference" doc:id="c350ac26-0f2c-4070-8c2a-be8d14f2d84a" name="updateOrderById" />
+    </flow>
+    <flow name="delete:\orders\(order_id):sap-systemapi-config">
+        <flow-ref doc:name="Flow Reference" doc:id="7a2160d6-3988-46c1-a967-1cc271f0a1d7" name="deleteOrderById" />
+    </flow>
+    <flow name="get:\orders:sap-systemapi-config">
+        <flow-ref doc:name="Flow Reference" doc:id="dc8f235a-630c-4962-8ae9-155bc6eeafba" name="getOrders" />
+    </flow>
+    <flow name="get:\orders\(order_id):sap-systemapi-config">
+        <flow-ref doc:name="Flow Reference" doc:id="ced36a76-e838-4a77-9eb7-f6061874fee4" name="getOrderById" />
+    </flow>
+    <flow name="post:\orders:application\json:sap-systemapi-config">
+        <flow-ref doc:name="Flow Reference" doc:id="1f946f82-2c97-40eb-9284-67145206f2bf" name="createOrder" />
+    </flow>
+    <flow name="get:\orders\customers\(customer_id):sap-systemapi-config">
+        <flow-ref doc:name="Flow Reference" doc:id="4dd24b0a-1811-40ff-a3e0-eaa45fcd0d0c" name="getOrdersByCustomerId" />
+    </flow>
+</mule>

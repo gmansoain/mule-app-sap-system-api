@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config1" doc:name="HTTP Listener config" doc:id="884ce2ba-4090-4d78-be16-1b687df7c001" >
+		<http:listener-connection host="0.0.0.0" port="8085" />
+	</http:listener-config>
+	<flow name="getOrders" doc:id="034ec987-ac4b-4065-96b4-6daad214f89f" >
+		<logger level="INFO" doc:name="Received GET ALL ORDERS Request" doc:id="d50c71d5-1b30-4746-9e1a-529007dd56b1" message="Received GET ALL ORDERS Request"/>
+		<try doc:name="Try" doc:id="4950614d-764b-4496-91d7-716869e7e72a" >
+			<db:select doc:name="Select" doc:id="532dc60c-981f-4e3f-a6cb-e6eee27148be" config-ref="Database_Config">
+			<db:sql><![CDATA[SELECT * FROM orders;]]></db:sql>
+		</db:select>
+		</try>
+		<choice doc:name="Check response is not empty" doc:id="8bb6de06-5239-415b-9d89-75baee0e1948" >
+			<when expression="sizeOf(payload) == 0">
+				<raise-error doc:name="GON_DB: NO_RECORDS_FOUND_IN_GET_ALL" doc:id="4c976a6a-38ef-4ce7-ad64-3d40fc73dc87" type="GON_DB: NO_RECORDS_FOUND_IN_GET_ALL" description="Finished GET ALL RECORDS Request WITH ERROR - No orders found in the DB"/>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="SUCCESS - Finished GET ALL ORDERS request" doc:id="2447358f-f7ed-49e8-9774-b4180f5e2c90" message="SUCCESS - Finished GET ALL ORDERS request" />
+				<ee:transform doc:name="Preparing Response" doc:id="f382003b-4de5-4e3c-bc47-8469655afbc2">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="getOrderById" doc:id="a54ef3dd-f61f-4fa9-8535-88b87e105f3c" >
+		<logger level="INFO" doc:name="Received GET ORDER BY ID Request" doc:id="f4149453-cf70-42b9-853d-ad6b5c331457" message="Received GET ORDER BY ID Request: order_id: #[attributes.uriParams.order_id]"/>
+		<set-variable value="#[attributes.uriParams.order_id]" doc:name="order_id" doc:id="55582455-11ee-4a7c-9245-3b7caf65905c" variableName="order_id"/>
+		<try doc:name="Try" doc:id="902f2d6d-2c8d-49ca-bb11-0ab4d52d5758" >
+			<db:select doc:name="Select" doc:id="d48879cf-3db7-48a7-961f-21056ab3456f" config-ref="Database_Config">
+			<db:sql><![CDATA[SELECT * FROM orders WHERE order_id = :id;
+]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	id: attributes.uriParams.order_id
+}]]]></db:input-parameters>
+		</db:select>
+		</try>
+		<choice doc:name="Check response is not empty" doc:id="35466c41-dfa8-4d96-baa9-0f537d6b406b" >
+			<when expression="sizeOf(payload) == 0">
+				<raise-error doc:name="GON_DB: NO_RECORDS_FOUND_IN_GET_BY_ID" doc:id="4442a053-983f-434e-8283-1fb6ea7794e9" type="GON_DB: NO_RECORDS_FOUND_IN_GET_BY_ID" description="Finished GET RECORD BY ID request WITH ERROR - No orders found in the DB at order_id = #[vars.order_id]"/>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Preparing Response" doc:id="5162d3f9-ad90-4b48-9162-257e4b5f6245">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<logger level="INFO" doc:name="SUCCESS - Finished GET ORDER BY ID" doc:id="55ad43a6-a9a7-4500-97c8-bef66f4f1050" message="SUCCESS - Finished GET ORDER BY ID. order_id = #[vars.order_id]. Response: #[payload]" />
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="createOrder" doc:id="845e92ef-a3ff-4199-9555-ac9ac9d7875f" >
+		<logger level="INFO" doc:name="Received CREATE ORDER Request" doc:id="b475cf88-90af-4423-b8a1-2f86cddb6752" message="Received CREATE ORDER Request: product_name = #[payload.product_name]"/>
+		<try doc:name="Try" doc:id="a94d9677-8f6b-4129-b3ab-b6a8545a5051" >
+			<db:insert doc:name="Insert" doc:id="085d12d8-9f52-4903-ba72-cd773e3a7bb2" config-ref="Database_Config">
+			<db:sql><![CDATA[INSERT INTO orders (customer_id, product_id, order_date, quantity, total_amount, status)
+VALUES (:customer_id, :product_id, :order_date, :quantity, :total_amount, :status)]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	customer_id: payload.customer_id,
+	product_id: payload.product_id,
+	order_date: payload.order_date,
+	quantity: payload.quantity,
+	total_amount: payload.total_amount,
+	status: payload.status
+	}]]]></db:input-parameters>
+		</db:insert>
+		</try>
+		<choice doc:name="Check Number of orders created &gt; 0" doc:id="8569713a-f3f3-40d2-8e03-868c91e77855" >
+			<when expression="payload.affectedRows == 0">
+				<raise-error doc:name="GON_DB: NO_RECORD_CREATED" doc:id="a570ea3f-9a95-42da-9ffa-21c74aa474ca" type="GON_DB: NO_RECORD_CREATED" description="Finished CREATE RECORD Request WITH ERROR - No orders created"/>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="SUCCESS - Finished inserting order into database" doc:id="48b38425-7dae-4c3f-8aa3-ebdf107f86b6" message="SUCCESS - Finished inserting order into database: product_name = #[payload.product_name]" />
+				<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	responseStatus: "201",&#10;	responseMessage: "SUCCESS - Order created"&#10;}]' doc:name="SUCCESS - Order created" doc:id="beb8931d-124e-4c5f-95ab-b40a58c1325f" />
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="updateOrderById" doc:id="4e32b18a-0fd2-4be0-a029-d1734a51a276" >
+		<logger level="INFO" doc:name="Received UPDATE ORDER BY ID Request" doc:id="f91af1d1-2bbc-4179-ac3f-68019a7028a2" message="Received UPDATE ORDER BY ID Request: order_id: #[attributes.uriParams.order_id]. Details: #[payload]"/>
+		<try doc:name="Try" doc:id="a5945b6e-ce2b-4044-b395-36e4846c3876" >
+			<db:update doc:name="Update" doc:id="3127f194-5178-4c77-a614-54b6892a8883" config-ref="Database_Config">
+			<db:sql><![CDATA[UPDATE orders
+SET quantity = :quantity,
+	total_amount = :total_amount,
+	product_id = :product_id,
+	status = :status
+WHERE order_id = :order_id;]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	order_id: attributes.uriParams.order_id,
+	quantity: payload.quantity,
+	product_id: payload.product_id,
+	total_amount: payload.total_amount,
+	status: payload.status
+}]]]></db:input-parameters>
+		</db:update>
+		</try>
+		<choice doc:name="Choice" doc:id="98712c2d-7b1d-4c62-a6c2-274b282aff7d" >
+			<when expression="payload.affectedRows == 0">
+				<raise-error doc:name="GON_DB: NO_RECORD_UPDATED" doc:id="74684869-ff5b-4ba3-9878-c338876882d3" type="GON_DB: NO_RECORD_UPDATED" description="Finished UPDATE BY ID Request WITH ERROR - No orders found in the DB at order_id = #[vars.order_id]"/>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="SUCCESS - Finished UPDATE ORDER BY ID Request" doc:id="b8ca8c33-ef86-445b-af24-6c64a16a40f7" message="SUCCESS - Finished UPDATE ORDER BY ID Request: order_id: #[vars.order_id]" />
+				<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	"responseStatus": "201",&#10;	"responseMessage": "SUCCESS - Order updated at order_id = " ++ vars.order_id as String&#10;}]' doc:name="SUCCESS - Order created" doc:id="cc75d5b8-83c0-4235-952b-57fe22a1bcd5" />
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="deleteOrderById" doc:id="128a15b7-4790-4ebf-82ff-6c8111b6c5f2" >
+		<logger level="INFO" doc:name="Received DELETE ORDER BY ID Request" doc:id="89a22d9b-0550-4c77-80b5-58ea3afef761" message="Received DELETE ORDER BY ID Request: order_id: #[attributes.uriParams.order_id]"/>
+		<set-variable value="#[attributes.uriParams.order_id]" doc:name="order_id" doc:id="c474210d-2ca1-4e07-bb4c-924654e8fcbb" variableName="order_id"/>
+		<try doc:name="Try" doc:id="f52e238c-d87a-4a54-8a17-e0039690ad67" >
+			<db:delete doc:name="Delete" doc:id="0265e71c-b8ed-4653-a9dd-c3ce4244df2a" config-ref="Database_Config">
+			<db:sql><![CDATA[DELETE FROM orders WHERE order_id = :id;
+]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	id: attributes.uriParams.order_id}]]]></db:input-parameters>
+		</db:delete>
+		</try>
+		<choice doc:name="Check Order has been deleted" doc:id="656bf0ff-bc9f-4d24-8d90-89341327adc0" >
+			<when expression="#[payload == 1]">
+				<logger level="INFO" doc:name="SUCCESS - Finished DELETE ORDER BY ID RequesT" doc:id="bae59ed8-525a-465e-9232-f85e9a4d969e" message="SUCCESS - Finished DELETE ORDER BY ID Request: order_id: #[vars.order_id]" />
+				<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	"responseStatus": "201",&#10;	"responseMessage": "SUCCESS - Order deleted. order_id = " ++ vars.order_id as String&#10;}]' doc:name="SUCCESS - Order deleted" doc:id="222a3893-eb08-4eaa-8c8d-82b3b8e7d66b" />
+			</when>
+			<otherwise >
+				<raise-error doc:name="GON_DB:DELETE_NO_RECORDS" doc:id="1fb0d583-deec-47ba-91bf-782582f3d585" type="GON_DB:DELETE_NO_RECORDS" description="Item not found in DELETE ORDER by ID Request. Invalid Order ID = #[vars.order_id]"/>
+			</otherwise>
+		</choice>
+		
+	</flow>
+	<flow name="getOrdersByCustomerId" doc:id="7039c7e7-2cb3-427b-b776-59aefb2e1ad4" >
+		<logger level="INFO" doc:name="Received GET RECORD BY CUSTOMER ID Request" doc:id="b6e53494-e5c9-4339-be8d-ae18cfede689" message="Received GET RECORD BY ID Request: order_id: #[attributes.uriParams.customer_id]"/>
+		<set-variable value="#[attributes.uriParams.customer_id]" doc:name="customer_id" doc:id="a8627ed5-bbe0-47bd-8587-3e67c9fea328" variableName="customer_id"/>
+		<try doc:name="Try" doc:id="a6fee8be-9660-4987-95ce-a6b1fc549142" >
+			<db:select doc:name="Select" doc:id="da789825-f379-4518-83ce-d60b99d65fe6" config-ref="Database_Config">
+			<db:sql><![CDATA[SELECT * FROM orders WHERE customer_id = :id;]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	id : attributes.uriParams.customer_id
+}]]]></db:input-parameters>
+		</db:select>
+		</try>
+		<choice doc:name="Check response is not empty" doc:id="7e294e92-6a6e-4441-a9a4-99c16cd5df03" >
+			<when expression="sizeOf(payload) == 0">
+				<raise-error doc:name="GON_DB: NO_RECORDS_FOUND_IN_GET_BY_ID" doc:id="51859497-e90a-43c6-99c9-7be8a2b9ef16" type="GON_DB: NO_RECORDS_FOUND_IN_GET_BY_ID" description="Finished GET RECORD BY ID request WITH ERROR - No records found in the DB at record_id = #[vars.record_id]"/>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Preparing Response" doc:id="e3c1fb11-b9c7-4315-af3a-11f34f79ecfb">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<logger level="INFO" doc:name="SUCCESS - Finished GET RECORD BY ID" doc:id="b47c2c52-d6b7-48a8-8743-6459469d3fdd" message="SUCCESS - Finished GET ORDERS  BY CUSTOMER ID. customer_id = #[vars.customer_id]. Response: #[payload]" />
+			</otherwise>
+		</choice>
+	
+	</flow>
+</mule>

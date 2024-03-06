@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="13a6d64b-a42e-4d06-b501-934da43c8e5b" >
+		<http:listener-connection host="${http.host}" port="${http.port}" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="84368bb7-3870-4f73-988b-bdb11cc4a98d" >
+		<db:my-sql-connection host="${database.host}" port="${database.port}" user="${database.username}" password="${secure::database.password}" database="${database.db}" />
+	</db:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="539eab5a-bb89-4c57-b527-5623185d190c" file="properties/properties-${env}.yaml" />
+	<global-property doc:name="Global Property" doc:id="502f2b07-5a81-4745-a6d5-f97d0061b262" name="env" value="${env}" />
+	<api-gateway:autodiscovery apiId="${api.id}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="1bf7f7dd-0271-458b-912e-1d646c561002" flowRef="sap-systemapi-main" />
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="45f4ce0d-ec6c-494c-ac7c-a74ae3ffd565" file="secure.properties/secure-properties-${env}.yaml" key="${secure.key}" >
+		<secure-properties:encrypt algorithm="Blowfish" />
+	</secure-properties:config>
+	<configuration doc:name="Configuration" doc:id="6bef1eea-7dfd-4c38-9d57-67d2d9650667" defaultErrorHandler-ref="GON_DB_Error_Handler" />
+</mule>
