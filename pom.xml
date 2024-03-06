@@ -5,11 +5,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>fc9e3283-a489-4e88-99aa-cceea4aa5ea1</groupId>
-	<artifactId>mule-app-sap-system-api</artifactId>
-	<version>1.0.1</version>
+	<artifactId>sap-system-api</artifactId>
+	<version>1.0.0</version>
 	<packaging>mule-application</packaging>
 
-	<name>mule-app-sap-system-api</name>
+	<name>sap-system-api</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
