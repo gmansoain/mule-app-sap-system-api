@@ -29,4 +29,3 @@ jobs:
         app_env: ${{ vars.APP_ENV }}
       run: |
         mvn clean -B deploy -DmuleDeploy -s .maven/settings.xml
-  
